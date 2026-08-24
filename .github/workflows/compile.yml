@@ -1,4 +1,4 @@
-name: Build TWRP Recovery (Universal)
+name: Build TWRP Recovery (Android 11)
 on:
   workflow_dispatch:
 
@@ -15,31 +15,29 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt update
-        sudo apt install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3
+        sudo apt install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
 
-    - name: Download Pre-built TWRP Environment
+    - name: Clone TWRP 11 Source
       run: |
         git config --global http.sslVerify false
-        mkdir twrp
-        # Скачиваем монолитный рабочий каркас компилятора Android 12.1
-        G_ENV=$(echo "aHR0cHM6Ly9naXRodWIuY29tL0NvbXBpbGUtTWFuaWZlc3RzL2FuZHJvaWRfYnVpbGRfZW52L3JlbGVhc2VzL2Rvd25sb2FkLzEyLjEvdHdycF9lbnZfMTIuMS50YXIuZ3o=" | base64 -d)
-        curl -L "$G_ENV" | tar -xz -C twrp
+        G_ENV=$(echo "aHR0cHM6Ly9naXRodWIuY29tL01pbmltYWxUV1JQL0FuZHJvaWRfbWFuaWZlc3RfdHdycF9hb3NwLmdpdA==" | base64 -d)
+        git clone --depth=1 -b twrp-11 "https://github.com" twrp_source
 
     - name: Inject Device Tree
       run: |
-        mkdir -p twrp/device/xiaomi/moon
-        cp -r ./* twrp/device/xiaomi/moon/ 2>/dev/null || true
+        mkdir -p twrp_source/device/xiaomi/moon
+        cp -r ./* twrp_source/device/xiaomi/moon/ 2>/dev/null || true
 
     - name: Compile TWRP Image
       run: |
-        cd twrp
+        cd twrp_source
         export ALLOW_MISSING_DEPENDENCIES=true
         source build/envsetup.sh
         lunch omni_moon-eng
-        make bootimage -j$(nproc)
+        make recoveryimage -j$(nproc)
 
     - name: Upload Recovery Artifact
       uses: actions/upload-artifact@v4
       with:
         name: TWRP-Redmi13-Moon
-        path: twrp/out/target/product/moon/*.img
+        path: twrp_source/out/target/product/moon/*.img
