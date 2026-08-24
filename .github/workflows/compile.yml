@@ -17,11 +17,11 @@ jobs:
         sudo apt update
         sudo apt install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
 
-    - name: Clone TWRP 11 Source
-      run: |
+        - name: Clone TWRP 11 Source
+        run: |
         git config --global http.sslVerify false
-        G_ENV=$(echo "aHR0cHM6Ly9naXRodWIuY29tL01pbmltYWxUV1JQL0FuZHJvaWRfbWFuaWZlc3RfdHdycF9hb3NwLmdpdA==" | base64 -d)
-        git clone --depth=1 -b twrp-11 "https://github.com" twrp_source
+        URL_B64=$(echo "aHR0cHM6Ly9naXRodWIuY29tL21pbmltYWwtbWFuaWZlc3QtdHdycC9wbGF0Zm9ybV9tYW5pZmVzdF90d3JwX29tbmkuZ2l0" | base64 -d)
+        git clone --depth=1 -b twrp-11.0 "$URL_B64" twrp_source
 
     - name: Inject Device Tree
       run: |
