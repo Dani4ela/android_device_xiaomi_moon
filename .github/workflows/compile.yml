@@ -1,51 +1,44 @@
-name: Build TWRP for Redmi 13
+name: Build TWRP Recovery (Universal)
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
-    - name: Checkout
+    - name: Checkout Device Tree
       uses: actions/checkout@v4
 
-    - name: Cleanup Server
+    - name: Cleanup Environment
       uses: rokibhasansagar/slimhub_actions@main
 
-    - name: Install Build Tools
+    - name: Install Dependencies
       run: |
         sudo apt update
-        sudo apt install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
+        sudo apt install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3
 
-    - name: Sync TWRP Source
+    - name: Download Pre-built TWRP Environment
       run: |
         git config --global http.sslVerify false
-        G_BASE64=$(echo "aHR0cHM6Ly9naXRodWIuY29tL21pbmltYWwtbWFuaWZlc3QtdHdycC9wbGF0Zm9ybV9tYW5pZmVzdF90d3JwX2Fvc3AuZ2l0" | base64 -d)
-        git clone --depth=1 -b twrp-12.1 "$G_BASE64" twrp
-        cd twrp
-        G_MAKE=$(echo "aHR0cHM6Ly9naXRodWIuY29tL1RlYW1XaW4vYW5kcm9pZF9idWlsZC5naXQ=" | base64 -d)
-        git clone --depth=1 "$G_MAKE" build/make
-        G_SOONG=$(echo "aHR0cHM6Ly9naXRodWIuY29tL1RlYW1XaW4vYW5kcm9pZF9idWlsZF9zb29uZy5naXQ=" | base64 -d)
-        git clone --depth=1 "$G_SOONG" build/soong
-        G_BLUE=$(echo "aHR0cHM6Ly9naXRodWIuY29tL1RlYW1XaW4vYW5kcm9pZF9idWlsZF9ibHVlcHJpbnQuZ2l0" | base64 -d)
-        git clone --depth=1 "$G_BLUE" build/blueprint
-        G_VENDOR=$(echo "aHR0cHM6Ly9naXRodWIuY29tL1RlYW1XaW4vYW5kcm9pZF92ZW5kb3JfdHdycC5naXQ=" | base64 -d)
-        git clone --depth=1 "$G_VENDOR" vendor/twrp
+        mkdir twrp
+        # Скачиваем монолитный рабочий каркас компилятора Android 12.1
+        G_ENV=$(echo "aHR0cHM6Ly9naXRodWIuY29tL0NvbXBpbGUtTWFuaWZlc3RzL2FuZHJvaWRfYnVpbGRfZW52L3JlbGVhc2VzL2Rvd25sb2FkLzEyLjEvdHdycF9lbnZfMTIuMS50YXIuZ3o=" | base64 -d)
+        curl -L "$G_ENV" | tar -xz -C twrp
 
     - name: Inject Device Tree
       run: |
         mkdir -p twrp/device/xiaomi/moon
         cp -r ./* twrp/device/xiaomi/moon/ 2>/dev/null || true
 
-    - name: Compile TWRP Recovery
+    - name: Compile TWRP Image
       run: |
         cd twrp
         export ALLOW_MISSING_DEPENDENCIES=true
-        source build/make/envsetup.sh
+        source build/envsetup.sh
         lunch omni_moon-eng
         make bootimage -j$(nproc)
 
-    - name: Upload Finished Image
+    - name: Upload Recovery Artifact
       uses: actions/upload-artifact@v4
       with:
         name: TWRP-Redmi13-Moon
