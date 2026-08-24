@@ -19,30 +19,20 @@ jobs:
 
     - name: Sync TWRP Source
       run: |
-        mkdir -p ~/bin
-        G_BASE64=$(echo "c3RvcmFnZS5nb29nbGVhcGlzLmNvbQ==" | base64 -d)
-        curl "https://${G_BASE64}/git-repo-downloads/repo" > ~/bin/repo
-        chmod a+x ~/bin/repo
-        export PATH="$HOME/bin:$PATH"
-        mkdir twrp && cd twrp
-        git config --global user.name "Builder"
-        git config --global user.email "builder@build.com"
         git config --global http.sslVerify false
-        URL=$(echo "aHR0cHM6Ly9naXRodWIuY29tL1RlYW1XaW4vQW5kcm9pZF9tYW5pZmVzdC5naXQ=" | base64 -d)
-        ~/bin/repo init -u "$URL" -b android-12.1 --depth=1
-        ~/bin/repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags
+        G_BASE64=$(echo "aHR0cHM6Ly9naXRodWIuY29tL21pbmltYWwtbWFuaWZlc3QtdHdycC9wbGF0Zm9ybV9tYW5pZmVzdF90d3JwX2Fvc3AuZ2l0" | base64 -d)
+        git clone --depth=1 -b twrp-12.1 "$G_BASE64" twrp
 
     - name: Inject Device Tree
       run: |
-        cd twrp
-        mkdir -p device/xiaomi/moon
-        cp -r ../* device/xiaomi/moon/ 2>/dev/null || true
+        mkdir -p twrp/device/xiaomi/moon
+        cp -r ./* twrp/device/xiaomi/moon/ 2>/dev/null || true
 
     - name: Compile TWRP Recovery
       run: |
         cd twrp
         export ALLOW_MISSING_DEPENDENCIES=true
-        source build/envsetup.sh
+        source build/make/envsetup.sh
         lunch omni_moon-eng
         make bootimage -j$(nproc)
 
