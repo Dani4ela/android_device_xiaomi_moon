@@ -19,10 +19,10 @@ jobs:
           - name: Sync TWRP Source
         run: |
         mkdir -p ~/bin
-        curl https://googleapis.com > ~/bin/repo
+        G_STORAGE="://googleapis.com"
+        curl "https://${G_STORAGE}/git-repo-downloads/repo" > ~/bin/repo
         chmod a+x ~/bin/repo
         export PATH="$HOME/bin:$PATH"
-        mkdir twrp && cd twrp
         git config --global user.name "Builder"
         git config --global user.email "builder@build.com"
         git config --global http.sslVerify false
