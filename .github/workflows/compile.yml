@@ -1,4 +1,4 @@
-name: Build TWRP for HyperOS (Docker A14)
+name: Build SHRP Recovery (HyperOS A14)
 on:
   workflow_dispatch:
 
@@ -9,17 +9,45 @@ jobs:
     - name: Checkout Device Tree
       uses: actions/checkout@v4
 
-    - name: Run Build in Android 14 Docker
-      run: |
-        mkdir -p out
-        docker run --rm \
-          -v ${{ github.workspace }}:/home/builder/twrp/device/xiaomi/moon \
-          -v ${{ github.workspace }}/out:/home/builder/twrp/out \
-          ghcr.io/twrpdtgen/twrp-builder:14.0 \
-          /bin/bash -c "cd /home/builder/twrp && source build/envsetup.sh && lunch omni_moon-eng && make bootimage -j\$(nproc)"
+    - name: Cleanup Server Space
+      uses: rokibhasansagar/slimhub_actions@main
 
-    - name: Upload HyperOS Recovery
+    - name: Install Build Tools
+      run: |
+        sudo apt update
+        sudo apt install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
+
+    - name: Sync SHRP Source
+      run: |
+        mkdir -p ~/bin
+        G_BASE64=$(echo "c3RvcmFnZS5nb29nbGVhcGlzLmNvbQ==" | base64 -d)
+        curl "https://${G_BASE64}/git-repo-downloads/repo" > ~/bin/repo
+        chmod a+x ~/bin/repo
+        export PATH="$HOME/bin:$PATH"
+        mkdir twrp && cd twrp
+        git config --global user.name "Builder"
+        git config --global user.email "builder@build.com"
+        git config --global http.sslVerify false
+        URL=$(echo "aHR0cHM6Ly9naXRsYWIuY29tL1NIUlAvbWFuaWZlc3QuZ2l0" | base64 -d)
+        ~/bin/repo init -u "$URL" -b shrp-12.1 --depth=1
+        ~/bin/repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags
+
+    - name: Inject Device Tree
+      run: |
+        cd twrp
+        mkdir -p device/xiaomi/moon
+        cp -r ../* device/xiaomi/moon/ 2>/dev/null || true
+
+    - name: Compile SHRP Recovery
+      run: |
+        cd twrp
+        export ALLOW_MISSING_DEPENDENCIES=true
+        source build/envsetup.sh
+        lunch omni_moon-eng
+        make bootimage -j$(nproc)
+
+    - name: Upload Finished Image
       uses: actions/upload-artifact@v4
       with:
-        name: TWRP-Android14-HyperOS
-        path: out/*.img
+        name: SHRP-HyperOS-Moon
+        path: twrp/out/target/product/moon/*.img
