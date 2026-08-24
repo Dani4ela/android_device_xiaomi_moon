@@ -23,10 +23,11 @@ jobs:
         URL_B64=$(echo "aHR0cHM6Ly9naXRodWIuY29tL21pbmltYWwtbWFuaWZlc3QtdHdycC9wbGF0Zm9ybV9tYW5pZmVzdF90d3JwX29tbmkuZ2l0" | base64 -d)
         git clone --depth=1 -b twrp-11.0 "$URL_B64" twrp_source
 
-    - name: Inject Device Tree
-      run: |
-        mkdir -p twrp_source/device/xiaomi/moon
-        cp -r ./* twrp_source/device/xiaomi/moon/ 2>/dev/null || true
+        - name: Clone TWRP 11 Source
+        run: |
+        git config --global http.sslVerify false
+        URL_B64=$(echo "aHR0cHM6Ly9naXRodWIuY29tL21pbmltYWwtbWFuaWZlc3QtdHdycC9wbGF0Zm9ybV9tYW5pZmVzdF90d3JwX29tbmkuZ2l0" | base64 -d)
+        git clone --depth=1 -b twrp-11.0 "$URL_B64" twrp_source
 
     - name: Compile TWRP Image
       run: |
